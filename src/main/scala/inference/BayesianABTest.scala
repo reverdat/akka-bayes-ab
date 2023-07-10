@@ -26,4 +26,8 @@ class BayesianABTest(val priorAlpha: Double, val priorBeta : Double) {
   def samplePosterior(sampleSize: Int): List[Double] = {
     Model.sample(lambda).take(sampleSize)
   }
+
+  def generateReport : ABTestReport = {
+    ???
+  }
 }
