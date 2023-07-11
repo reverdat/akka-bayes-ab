@@ -3,31 +3,33 @@ package inference
 import com.stripe.rainier.compute.Real
 import com.stripe.rainier.core.{Beta, Model}
 
+/**
+ * The BayesianABTest class encapsulates the Bayesian A/B test.
+ *
+ * We suppose our data D consists of n
+ * iid observations of a Bernoulli distribution of parameter θ (conversion rate), and we want to perform inference
+ * over this parameter. Suppose D contains r conversions, and let our initial belief of θ be modelled by a
+ * Beta(α, β) distribution. Then, after observing our data, the posterior distribution of θ follows a
+ * Beta(r+α, n-r+β).
+ */
 class BayesianABTest(val priorAlpha: Double, val priorBeta : Double) {
+
   var alpha : Double = priorAlpha
   var beta : Double = priorBeta
-  var lambda: Real = Beta(alpha, beta).latent // Prior Beta distribution
+  var theta: Real = Beta(alpha, beta).latent
 
-  def updateBeliefs(data: List[Int]) : Unit = {
-    /*
-    * Prior: Beta(alpha, beta)
-    * Likelihood: Binomial(N, numConversions)
-    * => Posterior: Beta(alpha + numConversions, beta + numNonConversions)
-    * */
-
-    val N : Int = data.size
-    val numConversions : Int = data.count(_ == 1)
-    val numNonConversions : Int = N - numConversions
-    alpha += numConversions
-    beta += numNonConversions
-    lambda = Beta(alpha, beta).latent
+  def updateBeliefs(D: List[Long]) : Unit = {
+    val n : Int = D.size
+    val r : Int = D.count(_ == 1)
+    // {n,r} is a sufficient statistic
+    alpha += r
+    beta += n - r
+    theta = Beta(alpha, beta).latent
   }
 
   def samplePosterior(sampleSize: Int): List[Double] = {
-    Model.sample(lambda).take(sampleSize)
+    Model.sample(theta).take(sampleSize)
   }
 
-  def generateReport : ABTestReport = {
-    ???
-  }
+  def getReport : ABTestReport = new ABTestReport(this)
 }
