@@ -13,6 +13,7 @@ libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-actor" % akkaVersion,
   "com.typesafe.akka" %% "akka-testkit" % akkaVersion,
   "com.stripe" %% "rainier-core" % "0.3.5",
-  "org.scalatest" %% "scalatest" % "3.0.5"
+  "org.scalanlp" %% "breeze" % "2.1.0",
+  "org.scalatest" %% "scalatest" % "3.0.5",
 )
 
