@@ -1,9 +1,7 @@
 package actors
 
 import akka.actor.{Actor, ActorLogging, ActorRef, Props, Terminated}
-
-import com.stripe.rainier.compute.Real
-import com.stripe.rainier.core.{Bernoulli, Model, Uniform}
+import data.GetData
 import inference.ABTestReport
 
 
@@ -29,9 +27,8 @@ class SupervisorActor extends Actor with ActorLogging{
   def withTestsOnline(refs: Map[Int, ActorRef], reports: Map[Int, ABTestReport], numTerminated: Int) : Receive = {
     case ObserveData =>
       for(kv <- refs){
-        val p: Real = Uniform(0, 1).latent
-        val observedData: List[Long] = Model.sample(Bernoulli(p)).take(1000000000)
-        kv._2 ! ObserveData(observedData)
+        val data : List[(Int, Long)] = GetData.generateSampleData(1000)
+        kv._2 ! ObserveData(data)
       }
     case GetReports => refs.foreach(kv => kv._2 ! GetReport(kv._1))
     case GetReportResponse(id, report) =>
@@ -41,7 +38,10 @@ class SupervisorActor extends Actor with ActorLogging{
       context.become(withTestsOnline(refs, updatedReports, numTerminated))
     case Terminated(_) =>
       log.info(s"${numTerminated + 1}/${refs.size} A/B test actors terminated")
-      if(numTerminated == refs.size - 1) context.stop(self)
+      if(numTerminated == refs.size - 1) {
+        reports.foreach(kv => log.info(s"A/B Test ${kv._1}: ${kv._2.toString}"))
+        context.stop(self)
+      }
       else context.become(withTestsOnline(refs, reports, numTerminated + 1))
   }
 
@@ -54,7 +54,7 @@ class SupervisorActor extends Actor with ActorLogging{
 object SupervisorActor {
   case class InitActors(numActors: Int)
   case object ObserveData
-  case class ObserveData(data: List[Long])
+  case class ObserveData(data: List[(Int, Long)])
   case class SamplePosterior(sampleSize: Int)
   case object GetReports
   case class GetReport(id: Int)

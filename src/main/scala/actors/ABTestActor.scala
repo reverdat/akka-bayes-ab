@@ -1,23 +1,21 @@
 package actors
 
 import akka.actor.{Actor, ActorLogging}
-import inference.{ABTestReport, BayesianABTest}
+import inference.{ABTest, ABTestReport}
 
 class ABTestActor extends Actor with ActorLogging {
   import SupervisorActor._
   import ABTestActor._
 
-  //TODO: Get params from config
-  override def receive: Receive = currentBelief(new BayesianABTest(0.5, 0.5))
+  override def receive: Receive = currentBelief(new ABTest())
 
-  def currentBelief(test: BayesianABTest) : Receive = {
+  def currentBelief(test: ABTest) : Receive = {
     case ObserveData(data) =>
-      test.updateBeliefs(data)
+      test.observeData(data)
       context.become(currentBelief(test))
-    case SamplePosterior(sampleSize) =>
-      val sample: List[Double] = test.samplePosterior(sampleSize)
-      context.sender() ! SamplePosteriorResponse(sample)
-    case GetReport(id) => context.sender() ! GetReportResponse(id, test.getReport) //TODO: Report current A/B Test results
+    case GetReport(id) =>
+      val report : ABTestReport = ABTestReport(test)
+      context.sender() ! GetReportResponse(id, report)
   }
 
   override def preStart(): Unit = log.info(s"A/B Test actor started")
