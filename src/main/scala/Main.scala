@@ -12,7 +12,7 @@ object Main extends App {
   properties.load(new FileReader("config.properties"))
 
   val system = ActorSystem("AkkaBayesDemo")
-  val supervisorActor = system.actorOf(Props[SupervisorActor])
+  val supervisorActor = system.actorOf(Props[SupervisorActor], "supervisorActor")
 
   supervisorActor ! InitActors(properties)
   supervisorActor ! ObserveData
