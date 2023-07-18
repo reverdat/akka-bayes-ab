@@ -37,13 +37,14 @@ class SupervisorActor extends Actor with ActorLogging{
       }
     case GetReports => refs.foreach(kv => kv._2 ! GetReport(kv._1))
     case GetReportResponse(id, report) =>
+      // TODO: Save reports to DB
       log.info(s"Received A/B report from test $id: ${report.toString}")
       val updatedReports : Map[Int, ABTestReport] = reports + (id -> report)
       refs get id foreach(ref => context.stop(ref))
       context.become(withTestsOnline(refs, properties, updatedReports, numTerminated))
     case Terminated(_) =>
       log.info(s"${numTerminated + 1}/${refs.size} A/B test actors terminated")
-      if(numTerminated == refs.size - 1) context.stop(self)
+      if(numTerminated == refs.size - 1) context.system.terminate()
       else context.become(withTestsOnline(refs, properties, reports, numTerminated + 1))
   }
 

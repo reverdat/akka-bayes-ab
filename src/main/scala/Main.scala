@@ -18,6 +18,4 @@ object Main extends App {
   supervisorActor ! ObserveData
   supervisorActor ! GetReports
 
-  // TODO: Save reports to DB
-
 }
